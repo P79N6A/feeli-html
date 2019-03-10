@@ -1,0 +1,118 @@
+/**
+ * New node file
+ */
+function encodeData (data) {
+  if (!data || typeof data != 'object') {
+    return '';
+  }
+  return Object.keys(data).map(function(key) {
+    return [ key, data[key] ].map(encodeURIComponent).join("=");
+  }).join("&");
+}
+
+function eventTap(target, extra) {
+  const data = extra || {};
+  data.target = target
+  window.collectEvent('tap', data);
+}
+
+$(function() {
+  var loops = 0;
+  var player = $("#jplayer");
+  var height = 710;
+  player.jPlayer({
+    ready : function() {
+      $(this).jPlayer("setMedia", {
+        title : $('#caption').text(),
+        m4v : window._videoInfo.video.play_addr.url_list[0],
+        poster : window._videoInfo.video.cover.url_list[0]
+      });
+      $("#btn_play").click(function() {
+        player.jPlayer("play");
+        $("#btn_play").fadeOut();
+      });
+      player.click(function() {
+        player.jPlayer("pause");
+        $("#btn_play").fadeIn();
+      });
+      player.width("100%");
+      player.css("margin-left","0px");
+    },
+    play : function() {
+      loops++;
+    },
+    loop : true,
+    swfPath : "js",
+    supplied : "m4v",
+    size : {
+      width :  "100%",
+      height : "100%",
+    },
+    preload : "auto"
+  });
+  var heightClient = document.documentElement.clientHeight;
+  function changemargin() {
+		if (window.XMLHttpRequest) {// code for IE7+, Firefox, Chrome, Opera,
+      // Safari
+			// document.getElementById('mainBody').style.marginTop = (heightClient - 810)/ 2 + "px";
+		} else {// code for IE6, IE5
+			document.getElementById('mainBody').style.expression = (heightClient - 810)/ 2 + "px";
+		}
+	}
+
+	if (heightClient > 810) {
+		changemargin();
+  }
+  
+
+  var twitterDesc = 'Check out this video created by '+ window._videoInfo.author.nickname +' : '+window.location.href+' : '+ $('#caption').text()
+  var twitterPara = {
+    original_referer : window.location.href,
+    text : twitterDesc
+  };
+
+  var facebookPara = {
+    app_id : 113869198637480/* musicalConfig.facebookKey */,
+    u : window.location.href,
+    display : 'popup',
+    sdk : 'joey'
+  };
+
+  $('#cover').on('click', function(e){
+    if(e.target.id === 'cover'){
+      $('#cover').addClass('hide');
+      return
+    }
+    if(e.target.id === 'copybtn'){
+      eventTap('copy_embed_code')
+      $('#embedinput').select();
+      if (document.execCommand('copy')) {
+        document.execCommand('copy');
+        $('#toast').css({display: 'inline'})
+        var timer = setTimeout(function(){
+          clearTimeout(timer)
+          $('#toast').css({display: 'none'})
+        },3000)
+      }
+    }
+  })
+  $('#shareFb').attr('href','https://www.facebook.com/sharer/sharer.php?'+encodeData(facebookPara))
+  $('#shareTwitter').attr('href','https://twitter.com/intent/tweet?'+encodeData(twitterPara))
+  $('#embed').click(function(){
+    eventTap('open_embed_toast')
+    $('#cover').removeClass('hide');
+    var id1 = window._videoInfo && window._videoInfo.aweme_id
+    var lastPath = window.location.pathname.split('/').pop();
+    var id2 = lastPath && lastPath.split('.')[0]
+    $('#embedinput').val(`<iframe width="340" height="700" src="https://www.tiktok.com/embed/${id1 || id2}" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`);
+    $('#embedinput').height($('#embedinput')[0].scrollHeight + "px");
+  })
+
+  $(document).on('contextmenu', function (ev) {
+    // 禁止 video 右键菜单
+    if (ev.target.nodeName == 'VIDEO') {
+      return false;
+    }
+  });
+
+});
